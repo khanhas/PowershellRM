@@ -2,6 +2,7 @@ using Rainmeter;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Threading;
 using System.Management.Automation.Runspaces;
@@ -13,19 +14,41 @@ namespace PowershellRM
         internal API rmAPI;
         internal string measureName;
 
+        internal static string baseLine = "line";
+
+        internal Runspace runspace = null;
+
+        public string script = "";
         public string output = "";
-        public PSDataCollection<PSObject> outputCollection;
+        public PipelineState lastState = PipelineState.NotStarted;
+
+        internal virtual void Reload()
+        {
+            script = "";
+            int lineNum = 1;
+            string command = rmAPI.ReadString(baseLine, "");
+
+            if (string.IsNullOrEmpty(command))
+            {
+                rmAPI.Log(API.LogType.Error, "Command not found.");
+                return;
+            }
+
+            while (!string.IsNullOrEmpty(command))
+            {
+                script += command + "\n";
+                ++lineNum;
+                command = rmAPI.ReadString(baseLine + lineNum, "");
+            }
+        }
 
         internal virtual void Dispose()
         {
         }
 
-        internal virtual void Reload()
-        {
-        }
-
         internal virtual double Update()
         {
+            Invoke();
             double.TryParse(output, out double result);
             return result;
         }
@@ -43,6 +66,38 @@ namespace PowershellRM
                 Reload();
             }
         }
+
+        internal void Invoke()
+        {
+            try
+            {
+                if (runspace == null)
+                {
+                    throw new Exception("Could not found Runspace");
+                }
+
+                using (Pipeline pipe = runspace.CreatePipeline())
+                {
+                    pipe.Commands.AddScript(script);
+                    Collection<PSObject> outputCollection = pipe.Invoke();
+
+                    rmAPI.LogF(API.LogType.Debug, "Done. State: {0}", pipe.PipelineStateInfo.State);
+                    lastState = pipe.PipelineStateInfo.State;
+
+                    foreach (PSObject outputItem in outputCollection)
+                    {
+                        if (outputItem != null)
+                        {
+                            output = outputItem.BaseObject.ToString();
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                rmAPI.Log(API.LogType.Error, e.ToString());
+            }
+        }
     }
 
     internal class ParentMeasure : Measure
@@ -50,71 +105,54 @@ namespace PowershellRM
         internal IntPtr Skin;
 
         internal static List<ParentMeasure> ParentMeasures = new List<ParentMeasure>();
-        public PowerShell psInstance;
-        public Runspace runspace;
-        public PSInvocationState state = PSInvocationState.NotStarted;
 
         internal ParentMeasure(API api)
         {
             rmAPI = api;
-            measureName = api.GetMeasureName();
+            measureName = api.GetMeasureName().ToLowerInvariant();
             Skin = api.GetSkin();
 
-            psInstance = PowerShell.Create();
-            runspace = RunspaceFactory.CreateRunspace();
+            InitialSessionState initState = InitialSessionState.CreateDefault();
+            initState.ApartmentState = System.Threading.ApartmentState.MTA;
+            initState.ThreadOptions = PSThreadOptions.UseNewThread;
+            
+            switch(rmAPI.ReadString("ExecutionPolicy", "").ToLowerInvariant())
+            {
+                case "unrestricted":
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                    break;
+                case "remotesigned":
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.RemoteSigned;
+                    break;
+                case "allsigned":
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.AllSigned;
+                    break;
+                case "restricted":
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Restricted;
+                    break;
+                case "bypass":
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Bypass;
+                    break;
+                case "undefined":
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Undefined;
+                    break;
+                default:
+                    initState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Default;
+                    break;
+            }
+
+            runspace = RunspaceFactory.CreateRunspace(initState);
             runspace.Open();
-            psInstance.Runspace = runspace;
-            outputCollection = new PSDataCollection<PSObject>();
+
+            runspace.SessionStateProxy.Path.SetLocation(rmAPI.ReplaceVariables("#CURRENTPATH#"));
 
             ParentMeasures.Add(this);
         }
 
         internal override void Dispose()
         {
-            psInstance.Dispose();
             runspace.Dispose();
             ParentMeasures.Remove(this);
-        }
-
-        internal override void Reload()
-        {
-            output = "";
-            outputCollection.Clear();
-
-            int lineNum = 1;
-            string baseLine = "Line";
-            string command = rmAPI.ReadString(baseLine, "");
-
-            if (string.IsNullOrEmpty(command))
-            {
-                rmAPI.Log(API.LogType.Error, "Command not found.");
-                return;
-            }
-
-            while (!string.IsNullOrEmpty(command))
-            {
-                psInstance.AddScript(command);
-                ++lineNum;
-                command = rmAPI.ReadString(baseLine + lineNum, "");
-            }
-
-            void callMeBack(IAsyncResult ar)
-            {
-                rmAPI.LogF(API.LogType.Debug, "{0}: Done. State: {1}", measureName, psInstance.InvocationStateInfo.State);
-                state = psInstance.InvocationStateInfo.State;
-
-                foreach (PSObject outputItem in outputCollection)
-                {
-                    output = outputItem.BaseObject.ToString();
-                }
-            }
-
-            psInstance.BeginInvoke<PSObject, PSObject>(
-                null,
-                outputCollection,
-                null,
-                callMeBack,
-                null);
         }
     }
 
@@ -125,7 +163,7 @@ namespace PowershellRM
         internal ChildMeasure(API api)
         {
             rmAPI = api;
-            string parentName = api.ReadString("ParentName", "");
+            string parentName = api.ReadString("ParentName", "").ToLowerInvariant();
             IntPtr skin = api.GetSkin();
             measureName = api.GetMeasureName();
 
@@ -145,64 +183,7 @@ namespace PowershellRM
                 return;
             }
 
-            outputCollection = new PSDataCollection<PSObject>();
-        }
-
-        internal override void Reload()
-        {
-            PSInvocationState state = parent.psInstance.InvocationStateInfo.State;
-            if (parent == null ||
-                state == PSInvocationState.Failed ||
-                state == PSInvocationState.Disconnected ||
-                state == PSInvocationState.Stopped)
-            {
-                return;
-            }
-
-            if (state != PSInvocationState.Completed)
-            {
-                rmAPI.LogF(API.LogType.Debug, "{0}: Reloading...", rmAPI.GetMeasureName());
-                Thread.Sleep(50);
-                Reload();
-                return;
-            }
-
-            output = "";
-            int lineNum = 1;
-            string baseLine = "Line";
-            string command = rmAPI.ReadString(baseLine, "");
-
-            if (string.IsNullOrEmpty(command))
-            {
-                rmAPI.Log(API.LogType.Error, "Command not found.");
-                return;
-            }
-
-            PowerShell psInstance = parent.psInstance;
-
-            while (!string.IsNullOrEmpty(command))
-            {
-                psInstance.AddScript(command);
-                ++lineNum;
-                command = rmAPI.ReadString(baseLine + lineNum, "");
-            }
-
-            void callMeBack(IAsyncResult ar)
-            {
-                rmAPI.LogF(API.LogType.Debug, "{0}: Done. State: {1}", measureName, psInstance.InvocationStateInfo.State);
-
-                foreach (PSObject outputItem in outputCollection)
-                {
-                    output = outputItem.BaseObject.ToString();
-                }
-            }
-
-            psInstance.BeginInvoke<PSObject, PSObject>(
-                null,
-                outputCollection,
-                null,
-                callMeBack,
-                null);
+            runspace = parent.runspace;
         }
     }
 
