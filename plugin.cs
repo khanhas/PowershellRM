@@ -19,26 +19,30 @@ namespace PowershellRM
         internal Runspace runspace = null;
 
         public string script = "";
+        public bool isScriptFromFile = false;
         public string output = "";
         public PipelineState lastState = PipelineState.NotStarted;
 
         internal virtual void Reload()
         {
-            script = "";
-            int lineNum = 1;
-            string command = rmAPI.ReadString(baseLine, "");
-
-            if (string.IsNullOrEmpty(command))
+            if (!isScriptFromFile)
             {
-                rmAPI.Log(API.LogType.Error, "Command not found.");
-                return;
-            }
+                script = "";
+                int lineNum = 1;
+                string command = rmAPI.ReadString(baseLine, "");
 
-            while (!string.IsNullOrEmpty(command))
-            {
-                script += command + "\n";
-                ++lineNum;
-                command = rmAPI.ReadString(baseLine + lineNum, "");
+                if (string.IsNullOrEmpty(command))
+                {
+                    rmAPI.Log(API.LogType.Error, "Command not found.");
+                    return;
+                }
+
+                while (!string.IsNullOrEmpty(command))
+                {
+                    script += command + "\n";
+                    ++lineNum;
+                    command = rmAPI.ReadString(baseLine + lineNum, "");
+                }
             }
         }
 
@@ -78,18 +82,31 @@ namespace PowershellRM
 
                 using (Pipeline pipe = runspace.CreatePipeline())
                 {
-                    pipe.Commands.AddScript(script);
+                    if (isScriptFromFile)
+                    {
+                        pipe.Commands.Add("Update");
+                    }
+                    else
+                    {
+                        pipe.Commands.AddScript(script);
+                    }
                     Collection<PSObject> outputCollection = pipe.Invoke();
 
                     rmAPI.LogF(API.LogType.Debug, "Done. State: {0}", pipe.PipelineStateInfo.State);
                     lastState = pipe.PipelineStateInfo.State;
 
+                    PSObject lastObject = null;
                     foreach (PSObject outputItem in outputCollection)
                     {
                         if (outputItem != null)
                         {
-                            output = outputItem.BaseObject.ToString();
+                            lastObject = outputItem;
                         }
+                    }
+
+                    if (lastObject != null)
+                    {
+                        output = lastObject.BaseObject.ToString();
                     }
                 }
             }
@@ -115,7 +132,6 @@ namespace PowershellRM
             InitialSessionState initState = InitialSessionState.CreateDefault();
             initState.ApartmentState = System.Threading.ApartmentState.MTA;
             initState.ThreadOptions = PSThreadOptions.UseNewThread;
-            
             switch(rmAPI.ReadString("ExecutionPolicy", "").ToLowerInvariant())
             {
                 case "unrestricted":
@@ -146,11 +162,40 @@ namespace PowershellRM
 
             runspace.SessionStateProxy.Path.SetLocation(rmAPI.ReplaceVariables("#CURRENTPATH#"));
 
+            string filePath = rmAPI.ReadPath("ScriptFile", "");
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                
+                if (!System.IO.File.Exists(filePath))
+                {
+                    rmAPI.Log(API.LogType.Error, "Script file does not exist.");
+                }
+                else
+                {
+                    isScriptFromFile = true;
+                    script = System.IO.File.ReadAllText(filePath);
+
+                    try
+                    {
+                        using (Pipeline pipe = runspace.CreatePipeline())
+                        {
+                            pipe.Commands.AddScript(script);
+                            pipe.Invoke();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        rmAPI.Log(API.LogType.Error, e.ToString());
+                    }
+                }
+            }
+
             ParentMeasures.Add(this);
         }
 
         internal override void Dispose()
         {
+
             runspace.Dispose();
             ParentMeasures.Remove(this);
         }
@@ -174,6 +219,7 @@ namespace PowershellRM
                 if (parentMeasure.Skin.Equals(skin) && parentMeasure.measureName.Equals(parentName))
                 {
                     parent = parentMeasure;
+                    break;
                 }
             }
 
