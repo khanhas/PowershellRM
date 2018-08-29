@@ -64,10 +64,20 @@ namespace PowershellRM
 
         internal void ExecuteBang(string args)
         {
-            string bang = args.ToLowerInvariant();
-            if (bang.Equals("update"))
+            if (args.Length > 0)
             {
-                Reload();
+                try
+                {
+                    using (Pipeline pipe = runspace.CreatePipeline())
+                    {
+                        pipe.Commands.AddScript(args);
+                        pipe.Invoke();
+                    }
+                }
+                catch (Exception e)
+                {
+                    rmAPI.Log(API.LogType.Error, e.ToString());
+                }
             }
         }
 
