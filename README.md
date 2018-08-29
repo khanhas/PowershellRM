@@ -62,6 +62,30 @@ Valid values:
 #### `ParentName`
 Set parent that this measure will be shared session state with.
 
+## Rainmeter API
+Rainmeter API is exposed to use in Powershell script by accessing variable `$RmAPI`. Followings is list of available methods you can call directly in powershell script:
+
+`$RmAPI` | Param | Description
+---|---|---
+`.Execute` | `(bangs)` | Execute Rainmeter bangs.
+`.GetMeasureName` | `()` | Returns current measure name.
+`.GetSkin` | `()` | Retrieves interger value of the internal pointer to the current skin.
+`.GetSkinName` | `()` | Returns current skin name.
+`.GetSkinWindow` | `()` | Returns interger value of the pointer to the handle of the skin window.
+`.Log` | `(logType, message)` | Prints message to Log Window.
+`.LogF` | `(logType, format, ...args[])` | Prints formated string to Log Window
+`.ReadDouble` | `(option, defaultValue)` | Retrieves measure option value in `double` type. 
+`.ReadInt` | `(option, defaultValue)` | Retrieves measure option value in interger. 
+`.ReadPath` | `(option, defaultValue)` | Retrieves measure option defined in the skin file and converts a relative path to a absolute path.
+`.ReadString` | `(option, defaultValue)` | Retrieves the option defined in the skin file as a string.
+`.ReplaceVariables` | `(input)` | Returns a string, replacing any variables (or section variables) within the inputted string.
+ 
+Valid `logType`:
+- `1`: Error
+- `2`: Warning
+- `3`: Notice
+- `4`: Debug
+
 ### Development
 Requirements:
 - Visual Studio 2015/2017
