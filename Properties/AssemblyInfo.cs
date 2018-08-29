@@ -1,39 +1,13 @@
-﻿using System.Resources;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
-// General Information about an assembly is controlled through the following
-// set of attributes. Change these attribute values to modify the information
-// associated with an assembly.
-[assembly: AssemblyTitle("PowershellRM")]
-[assembly: AssemblyDescription("Execute powershell script")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("khanhas")]
-[assembly: AssemblyProduct("powershell-rm")]
-[assembly: AssemblyCopyright("Copyright © 2018")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+[assembly: AssemblyCopyright("© 2018 - khanhas")]
+[assembly: AssemblyVersion("0.1.0")]
 
-// Setting ComVisible to false makes the types in this assembly not visible
-// to COM components.  If you need to access a type in this assembly from
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
-
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("acdd6e33-ff46-48e8-b968-734b3fe4851d")]
-
-// Version information for an assembly consists of the following four values:
-//
-//      Major Version
-//      Minor Version
-//      Build Number
-//      Revision
-//
-// You can specify all the values or you can default the Build and Revision Numbers
-// by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
-[assembly: NeutralResourcesLanguage("en")]
-
+// Do not change the entries below!
+#if X64
+[assembly: AssemblyInformationalVersion("3.0.2.2161 (64-bit)")]
+#else
+[assembly: AssemblyInformationalVersion("3.0.2.2161 (32-bit)")]
+#endif
+[assembly: AssemblyProduct("Rainmeter")]
