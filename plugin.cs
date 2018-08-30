@@ -12,31 +12,32 @@ using System.Threading;
 
 namespace PowershellRM
 {
+    internal enum ScriptTypes
+    {
+        NOTVALID,
+        FILENOUPDATE,
+        FILE,
+        LINE
+    }
+
     internal class Measure
     {
-        internal API rmAPI;
-        internal string measureName;
-
         internal static string baseLine = "line";
 
-        internal Runspace runspace = null;
+        internal API rmAPI;
+        internal string measureName;
+        internal Runspace runspace;
+        internal ScriptTypes scriptType = ScriptTypes.NOTVALID;
+        internal string script;
+        internal string output;
 
-        public string script = "";
-        public bool isScriptFromFile = false;
-        public string output = "";
-        public PipelineState lastState = PipelineState.NotStarted;
+        internal virtual void SetRmAPI() { }
 
-        internal virtual void Dispose()
-        {
-        }
-
-        internal virtual void SetRmAPI()
-        {
-        }
+        internal virtual void Dispose() { }
 
         internal void Reload()
         {
-            if (!isScriptFromFile)
+            if (scriptType == ScriptTypes.NOTVALID || scriptType == ScriptTypes.LINE)
             {
                 script = "";
                 int lineNum = 1;
@@ -44,6 +45,7 @@ namespace PowershellRM
 
                 if (string.IsNullOrEmpty(command))
                 {
+                    scriptType = ScriptTypes.NOTVALID;
                     rmAPI.Log(API.LogType.Error, "Command not found.");
                     return;
                 }
@@ -54,6 +56,8 @@ namespace PowershellRM
                     ++lineNum;
                     command = rmAPI.ReadString(baseLine + lineNum, "");
                 }
+
+                scriptType = ScriptTypes.LINE;
             }
         }
 
@@ -90,29 +94,30 @@ namespace PowershellRM
 
         internal void Invoke()
         {
+            if (scriptType == ScriptTypes.NOTVALID
+             || scriptType == ScriptTypes.FILENOUPDATE)
+            {
+                return;
+            }
+
             try
             {
-                if (runspace == null)
-                {
-                    throw new Exception("Could not found Runspace");
-                }
-
                 using (Pipeline pipe = runspace.CreatePipeline())
                 {
                     SetRmAPI();
 
-                    if (isScriptFromFile)
+                    switch(scriptType)
                     {
-                        pipe.Commands.Add("Update");
-                    }
-                    else
-                    {
-                        pipe.Commands.AddScript(script);
+                        case ScriptTypes.FILE:
+                            pipe.Commands.Add("Update");
+                            break;
+                        case ScriptTypes.LINE:
+                            pipe.Commands.AddScript(script);
+                            break;
                     }
 
                     Collection<PSObject> outputCollection = pipe.Invoke();
                     rmAPI.LogF(API.LogType.Debug, "Done. State: {0}", pipe.PipelineStateInfo.State);
-                    lastState = pipe.PipelineStateInfo.State;
 
                     PSObject lastObject = null;
                     foreach (PSObject outputItem in outputCollection)
@@ -138,11 +143,9 @@ namespace PowershellRM
 
     internal class ParentMeasure : Measure
     {
-        internal IntPtr Skin;
-
         internal static List<ParentMeasure> ParentMeasures = new List<ParentMeasure>();
-
-        public RmPSHost rmPSHost;
+        internal IntPtr Skin;
+        internal RmPSHost rmPSHost;
 
         internal ParentMeasure(API api)
         {
@@ -197,7 +200,7 @@ namespace PowershellRM
                 }
                 else
                 {
-                    isScriptFromFile = true;
+                    scriptType = ScriptTypes.FILE;
                     script = System.IO.File.ReadAllText(filePath);
 
                     try
@@ -206,6 +209,13 @@ namespace PowershellRM
                         {
                             pipe.Commands.AddScript(script);
                             pipe.Invoke();
+                        }
+
+                        CommandInfo updateFuncInfo = runspace.SessionStateProxy.InvokeCommand.GetCommand("Update", CommandTypes.Function);
+                        if (updateFuncInfo == null)
+                        {
+                            rmAPI.Log(API.LogType.Debug, "Could not find Update function in script file.");
+                            scriptType = ScriptTypes.FILENOUPDATE;
                         }
                     }
                     catch (Exception e)
@@ -227,7 +237,7 @@ namespace PowershellRM
         internal override void SetRmAPI()
         {
             runspace.SessionStateProxy.SetVariable("RMAPI", rmAPI);
-            rmPSHost.RainmeterAPI = rmAPI;
+            rmPSHost.Ui.RainmeterAPI = rmAPI;
         }
     }
 
@@ -265,7 +275,7 @@ namespace PowershellRM
         internal override void SetRmAPI()
         {
             runspace.SessionStateProxy.SetVariable("RMAPI", rmAPI);
-            parent.rmPSHost.RainmeterAPI = rmAPI;
+            parent.rmPSHost.Ui.RainmeterAPI = rmAPI;
         }
     }
 
@@ -352,21 +362,10 @@ namespace PowershellRM
     internal class RmPSHost : PSHost
     {
         private Guid _hostId = Guid.NewGuid();
-        private API _rmAPI;
 
         public RmPSHost()
         {
             Ui = new RmPSHostUserInterface();
-        }
-
-        public API RainmeterAPI
-        {
-            get { return _rmAPI; }
-            set
-            {
-                _rmAPI = value;
-                Ui.RainmeterAPI = value;
-            }
         }
 
         public override Guid InstanceId
