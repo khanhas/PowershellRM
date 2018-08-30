@@ -1,21 +1,21 @@
 {
-    "name":  "PowershellRM Example Skins",
-    "author":  "khanhas",
-    "version":  "0.1.0",
-    "minimumVersion":  "4.1",
-    "minimumWindows":  "5.1",
-    "output":  "./dist/PowershellRM_0.1.0.rmskin",
-    "skinDir":  "./example-skins",
-    "configPrefix":  "PowershellRMExample",
-    "headerImage":  "./header.bmp",
-    "loadType":  "Skin",
-    "load":  "PowershellRMExample\\Script\\Script.ini",
-    "variableFiles":  "",
-    "plugins":  [
-                    {
-                        "name":  "PowershellRM.dll",
-                        "x86":  "D:\\powershell-rm\\bin\\x86\\Release\\PowershellRM.dll",
-                        "x64":  "D:\\powershell-rm\\bin\\x64\\Release\\PowershellRM.dll"
-                    }
-                ]
+  "name": "PowershellRM Example Skins",
+  "author": "khanhas",
+  "version": "0.1.0",
+  "minimumVersion": "4.1",
+  "minimumWindows": "5.1",
+  "output": "./dist/PowershellRM_0.1.0.rmskin",
+  "skinDir": "./example-skins",
+  "configPrefix": "PowershellRMExample",
+  "headerImage": "./header.bmp",
+  "loadType": "Skin",
+  "load": "PowershellRMExample\\Script\\Script.ini",
+  "variableFiles": "",
+  "plugins": [
+    {
+      "name": "PowershellRM.dll",
+      "x86": "D:\\powershell-rm\\bin\\x86\\PowershellRM.dll",
+      "x64": "D:\\powershell-rm\\bin\\x64\\PowershellRM.dll"
+    }
+  ]
 }
