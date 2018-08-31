@@ -5,6 +5,14 @@ Invokes Powershell script in Rainmeter
 - Download and install rmskin package in [Release page](https://github.com/khanhas/PowershellRM/releases/)  
     or download dll zip package, extract the dll corresponding to your system platform to `%appdata%\Rainmeter\Plugins`.
 
+#### Windows 7
+Before running Rainmeter, make sure you have at least PowerShell 5.1 version first by opening up PowerShell CLI and typing in:
+```powershell
+$psversiontable
+```
+
+Download [PowerShell 5.1 for Windows 7](https://www.microsoft.com/en-us/download/confirmation.aspx?id=54616).
+
 ## Basic usage
 There are 2 ways to input your script:
 
