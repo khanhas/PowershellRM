@@ -42,7 +42,7 @@ Only one level of parent/children is allowed.
 #### `Line`, `Line2`, `Line3`, ...
 Defines script will be invoked at update line by line.
 Powershell syntax allows you to define a whole valid script in one line, but for sake of customization and readiblity, please do break them down to reasonable line width.
-If your script is too long, it is best to define script file and set its path in `ScriptFile`.
+If your script is too long, it is best to write them in script file and set script file path in `ScriptFile` option.
 
 ### Parent only
 #### `ScriptFile`
@@ -62,23 +62,23 @@ Valid values:
 #### `ParentName`
 Set parent that this measure will be shared session state with.
 
-## Rainmeter API
-Rainmeter API is exposed to use in Powershell script by accessing variable `$RmAPI`. Followings is list of available methods you can call directly in powershell script:
+## Functions
+Rainmeter API is exposed to use in Powershell script by accessing variable `$RmAPI`. Followings is list of available functions you can call directly in powershell script:
 
-`$RmAPI` | Param | Description
----|---|---
-`.Execute` | `(bangs)` | Execute Rainmeter bangs.
-`.GetMeasureName` | `()` | Returns current measure name.
-`.GetSkin` | `()` | Retrieves interger value of the internal pointer to the current skin.
-`.GetSkinName` | `()` | Returns current skin name.
-`.GetSkinWindow` | `()` | Returns interger value of the pointer to the handle of the skin window.
-`.Log` | `(logType, message)` | Prints message to Log Window.
-`.LogF` | `(logType, format, ...args[])` | Prints formated string to Log Window
-`.ReadDouble` | `(option, defaultValue)` | Retrieves measure option value in `double` type. 
-`.ReadInt` | `(option, defaultValue)` | Retrieves measure option value in interger. 
-`.ReadPath` | `(option, defaultValue)` | Retrieves measure option defined in the skin file and converts a relative path to a absolute path.
-`.ReadString` | `(option, defaultValue)` | Retrieves the option defined in the skin file as a string.
-`.ReplaceVariables` | `(input)` | Returns a string, replacing any variables (or section variables) within the inputted string.
+`$RmAPI` | Param | Returns | Description
+---|---|---|---
+`.Execute` | `(bangs)` | | Execute Rainmeter bangs.
+`.GetMeasureName` | `()` | string | Returns current measure name.
+`.GetSkin` | `()` | int | Retrieves interger value of the internal pointer to the current skin.
+`.GetSkinName` | `()` | string | Returns current skin name.
+`.GetSkinWindow` | `()` | int | Returns interger value of the pointer to the handle of the skin window.
+`.Log` | `(logType, message)` | | Prints message to Log Window.
+`.LogF` | `(logType, format, ...args[])` | | Prints formated string to Log Window
+`.ReadDouble` | `(option, defaultValue)` | double | Retrieves measure option value in `double` type. 
+`.ReadInt` | `(option, defaultValue)` | int |Retrieves measure option value in interger. 
+`.ReadPath` | `(option, defaultValue)` | string | Retrieves measure option defined in the skin file and converts a relative path to a absolute path.
+`.ReadString` | `(option, defaultValue)` | string | Retrieves the option defined in the skin file as a string.
+`.ReplaceVariables` | `(input)` | string | Returns a string, replacing any variables (or section variables) within the inputted string.
  
 Valid `logType`:
 - `1`: Error
@@ -86,7 +86,46 @@ Valid `logType`:
 - `3`: Notice
 - `4`: Debug
 
-### Development
+## Log
+There are 2 ways that you can use to print log into Rainmeter log windows:
+### 1. Use Rainmeter API:
+```powershell
+# Print a warning:
+$RmAPI.Log(2, "WARNING! Be careful dude.")
+
+#Print a formatted error:
+$errorSource = "an option"
+$check = "Color variable"
+$RmAPI.LogF(1, "ERROR! You messed {0} up! Check {1} again!", $errorSource, $check)
+```
+
+### 2. Use `Write-` commands  
+Powershell has these commands on default and I re-routed them to print to Log window:
+```powershell
+# Print a notice:
+Write-Host
+# Print a warning:
+Write-Warning
+```
+Currently, I'm investigating why `Write-Debug` and `Write-Error` don't works.
+
+`Write-Ouput` also works but what it writes will be used as measure value if it's the last object in the script. It won't print anything to Log window.
+For example:
+```powershell
+$foo = "Bar"
+Write-Output "Stuff"
+$foo
+```
+Measure value is `Bar`
+
+```powershell
+$foo = "Bar"
+$foo
+Write-Output "Stuff"
+```
+Measure value is `Stuff`
+
+## Development
 Requirements:
 - Visual Studio 2015/2017
 - .NET Framework 4.5
