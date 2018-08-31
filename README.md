@@ -11,7 +11,12 @@ Before running Rainmeter, make sure you have at least PowerShell 5.1 version fir
 $psversiontable
 ```
 
+It should shows: https://i.imgur.com/P6aCmr2.png
+
 Download [PowerShell 5.1 for Windows 7](https://www.microsoft.com/en-us/download/confirmation.aspx?id=54616).
+
+#### Windows 10
+Windows 10 already comes with PowerShell 5.1 so you don't need to worry. Everything works out of the box. 
 
 ## Basic usage
 There are 2 ways to input your script:
