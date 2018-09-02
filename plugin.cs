@@ -117,7 +117,6 @@ namespace PowershellRM
                     }
 
                     Collection<PSObject> outputCollection = pipe.Invoke();
-                    rmAPI.LogF(API.LogType.Debug, "Done. State: {0}", pipe.PipelineStateInfo.State);
 
                     PSObject lastObject = null;
                     foreach (PSObject outputItem in outputCollection)
@@ -365,7 +364,6 @@ namespace PowershellRM
             Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
             if (argc > 0)
             {
-                measure.rmAPI.Log(API.LogType.Error, argv[0]);
                 using (Pipeline pipe = measure.runspace.CreatePipeline())
                 {
                     for (int i = 0; i < argc; i++)
@@ -377,9 +375,7 @@ namespace PowershellRM
                             command = command.Remove(command.Length - 1, 1).Remove(0, 1);
                         }
                         pipe.Commands.AddScript(command);
-                        measure.rmAPI.Log(API.LogType.Error, argv[i]);
                     }
-
 
                     try
                     {
