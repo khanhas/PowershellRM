@@ -42,7 +42,7 @@ Function Popup {
     $newPS.Runspace.SessionStateProxy.SetVariable("message",$message)
     $newPS.AddScript({
         (New-Object -ComObject Wscript.Shell).Popup($message, 0, "Ding dong", 0x1)
-    }).BeginInvoke($null, $null )
+    }).BeginInvoke()
 }
 
 Function EnterTimerNameAndAdd {
