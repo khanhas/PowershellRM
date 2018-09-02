@@ -46,11 +46,12 @@ function BumpVersion
         [Parameter(Mandatory = $true)][string]$ver
     )
 
-    (Get-Content ".\Properties\AssemblyInfo.cs") -replace "AssemblyVersion(`"[\d\.]*`")", "AssemblyVersion(`"$($ver)`")" |
-    Set-Content ".\Properties\AssemblyInfo.cs"
+    $prop = Get-Content ".\Properties\AssemblyInfo.cs" -Encoding UTF8
+    $prop -replace 'AssemblyVersion\("[\d\.]*"\)', "AssemblyVersion(`"$ver`")" |
+        Set-Content ".\Properties\AssemblyInfo.cs" -Encoding UTF8
 
     $skinDef = Get-Content ".\skinDefinition.json" | ConvertFrom-Json
     $skinDef.version = $ver
     $skinDef.output = "./dist/PowershellRM_$($ver).rmskin"
-    $skinDef | ConvertTo-Json | Set-Content ".\skinDefinition.json"
+    $skinDef | ConvertTo-Json | Set-Content ".\skinDefinition.json" -Encoding UTF8
 }
