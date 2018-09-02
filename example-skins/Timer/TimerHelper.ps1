@@ -36,7 +36,13 @@ Function Popup {
         [string]$message = ""
     )
 
-    (New-Object -ComObject Wscript.Shell).Popup($message, 0, "Ding dong", 0x1)
+    # Create another powershell for popup to prevent locking thread
+    # so multiple popups can pop at same time
+    $newPS = [System.Management.Automation.PowerShell]::Create()
+    $newPS.Runspace.SessionStateProxy.SetVariable("message",$message)
+    $newPS.AddScript({
+        (New-Object -ComObject Wscript.Shell).Popup($message, 0, "Ding dong", 0x1)
+    }).BeginInvoke($null, $null )
 }
 
 Function EnterTimerNameAndAdd {
