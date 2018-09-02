@@ -138,6 +138,50 @@ Write-Output "Stuff"
 ```
 Measure value is `Stuff`
 
+## Section variable
+Rainmeter supports calling function from plugin and replace whatever function retuns as variable's value.  
+In this function, you can place multiple parameters, separated by commas (`,`).  
+Example:
+```ini
+[MeterTitle]
+Meter = String
+Text = [MeasureName:ExampleFunction(arg_one, arg_two, arg_three)]
+DynamicVariables = 1
+```
+
+I already implemented a function called `Invoke` to invoke one or more scripts:
+### `Invoke(script, script, ...)`
+Each script should be fitted in one parameter. Scripts will be invoked one by one.  
+Last output object will be section variable value.
+
+**Example:**
+```ini
+Text = [MeasureName:Invoke(Get-Process | Select-Object -Index 1 | Select-Object -ExpandProperty ProcessName)]
+```
+
+Keeps in mind that comma is for separating section variable function's parameters, if you tend to use it in script, drap your script inside double quotes and use single quotes in double quotes's place inside your script.  
+
+**Example:**
+Joins an array of string containing `Yomama`, a Rainmeter variable `Verb` and a Powershell variable `Noun`
+```ini
+[Rainmeter]
+Update = 1000
+
+[Variables]
+Verb = is
+
+[PSMR]
+Measure = Plugin
+Plugin = PowershellRM
+Line = $Noun = "The Obesity"
+
+[Meter]
+Meter = String
+Text = [MeasureName:Invoke("'Yomama', '#Verb#', $Noun -join ' - '")]
+```
+
+Because of this messy interface, you really should prepare a function in your PowershellRM script that only need to pass few parameters that are simple objects like string, interger or float. Then uses `:Invoke` to call that function.
+
 ## Development
 Requirements:
 - Visual Studio 2015/2017
