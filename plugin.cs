@@ -106,7 +106,7 @@ namespace PowershellRM
                 {
                     SetRmAPI();
 
-                    switch(scriptType)
+                    switch (scriptType)
                     {
                         case ScriptTypes.FILE:
                             pipe.Commands.Add("Update");
@@ -154,7 +154,7 @@ namespace PowershellRM
             Skin = api.GetSkin();
 
             InitialSessionState initState = InitialSessionState.CreateDefault();
-            initState.ApartmentState = System.Threading.ApartmentState.MTA;
+            initState.ApartmentState = System.Threading.ApartmentState.STA;
             initState.ThreadOptions = PSThreadOptions.ReuseThread;
 
             switch (rmAPI.ReadString("ExecutionPolicy", "").ToLowerInvariant())
@@ -221,6 +221,7 @@ namespace PowershellRM
                     catch (Exception e)
                     {
                         rmAPI.Log(API.LogType.Error, e.ToString());
+                        scriptType = ScriptTypes.NOTVALID;
                     }
                 }
             }
@@ -357,158 +358,207 @@ namespace PowershellRM
             Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
             measure.ExecuteBang(Marshal.PtrToStringUni(args));
         }
+
+        [DllExport]
+        public static IntPtr Invoke(IntPtr data, int argc, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] argv)
+        {
+            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
+            if (argc > 0)
+            {
+                measure.rmAPI.Log(API.LogType.Error, argv[0]);
+                using (Pipeline pipe = measure.runspace.CreatePipeline())
+                {
+                    for (int i = 0; i < argc; i++)
+                    {
+                        string command = argv[i];
+                        // Trim double quotes
+                        if (command.StartsWith("\"") && command.EndsWith("\""))
+                        {
+                            command = command.Remove(command.Length - 1, 1).Remove(0, 1);
+                        }
+                        pipe.Commands.AddScript(command);
+                        measure.rmAPI.Log(API.LogType.Error, argv[i]);
+                    }
+
+
+                    try
+                    {
+                        var outputCollection = pipe.Invoke();
+                        PSObject lastObject = null;
+                        foreach (PSObject output in outputCollection)
+                        {
+                            if (output != null)
+                            {
+                                lastObject = output;
+                            }
+                        }
+                        if (lastObject != null)
+                        {
+                            return Marshal.StringToHGlobalUni(lastObject.BaseObject.ToString());
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        measure.rmAPI.Log(API.LogType.Error, e.Message);
+                    }
+                }
+            }
+
+            return IntPtr.Zero;  // Do not replace the variable
+        }
+
     }
 
     internal class RmPSHost : PSHost
+{
+    private Guid _hostId = Guid.NewGuid();
+
+    public RmPSHost()
     {
-        private Guid _hostId = Guid.NewGuid();
-
-        public RmPSHost()
-        {
-            Ui = new RmPSHostUserInterface();
-        }
-
-        public override Guid InstanceId
-        {
-            get { return _hostId; }
-        }
-
-        public override string Name
-        {
-
-            get { return "RainmeterPSHost"; }
-        }
-
-        public override Version Version
-        {
-            get { return new Version(1, 0); }
-        }
-
-        public override PSHostUserInterface UI
-        {
-            get { return Ui; }
-        }
-
-        public override CultureInfo CurrentCulture
-        {
-            get { return Thread.CurrentThread.CurrentCulture; }
-        }
-
-        public override CultureInfo CurrentUICulture
-        {
-            get { return Thread.CurrentThread.CurrentUICulture; }
-        }
-
-        internal RmPSHostUserInterface Ui { get; set; }
-
-        public override void EnterNestedPrompt()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void ExitNestedPrompt()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void NotifyBeginApplication()
-        {
-            return;
-        }
-
-        public override void NotifyEndApplication()
-        {
-            return;
-        }
-
-        public override void SetShouldExit(int exitCode)
-        {
-            return;
-        }
+        Ui = new RmPSHostUserInterface();
     }
 
-    internal class RmPSHostUserInterface : PSHostUserInterface
+    public override Guid InstanceId
     {
-        public API RainmeterAPI { get; set; }
-
-        public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)
-        {
-            RainmeterAPI.Log(API.LogType.Notice, value);
-        }
-
-        public override void Write(string value)
-        {
-            RainmeterAPI.Log(API.LogType.Notice, value);
-        }
-
-        public override void WriteDebugLine(string message)
-        {
-            RainmeterAPI.Log(API.LogType.Debug, message);
-        }
-
-        public override void WriteErrorLine(string value)
-        {
-            RainmeterAPI.Log(API.LogType.Error, value);
-        }
-
-        public override void WriteLine(string value)
-        {
-            RainmeterAPI.Log(API.LogType.Notice, value);
-        }
-
-        public override void WriteVerboseLine(string message)
-        {
-            RainmeterAPI.Log(API.LogType.Notice, message);
-        }
-
-        public override void WriteWarningLine(string message)
-        {
-            RainmeterAPI.Log(API.LogType.Warning, message);
-        }
-
-        public override void WriteProgress(long sourceId, ProgressRecord record)
-        {
-            return;
-        }
-
-        public string Output
-        {
-            get { return null; }
-        }
-
-        public override Dictionary<string, PSObject> Prompt(string caption, string message, Collection<FieldDescription> descriptions)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int PromptForChoice(string caption, string message, Collection<ChoiceDescription> choices, int defaultChoice)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override PSHostRawUserInterface RawUI
-        {
-            get { return null; }
-        }
-
-        public override string ReadLine()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override System.Security.SecureString ReadLineAsSecureString()
-        {
-            throw new NotImplementedException();
-        }
+        get { return _hostId; }
     }
+
+    public override string Name
+    {
+
+        get { return "RainmeterPSHost"; }
+    }
+
+    public override Version Version
+    {
+        get { return new Version(1, 0); }
+    }
+
+    public override PSHostUserInterface UI
+    {
+        get { return Ui; }
+    }
+
+    public override CultureInfo CurrentCulture
+    {
+        get { return Thread.CurrentThread.CurrentCulture; }
+    }
+
+    public override CultureInfo CurrentUICulture
+    {
+        get { return Thread.CurrentThread.CurrentUICulture; }
+    }
+
+    internal RmPSHostUserInterface Ui { get; set; }
+
+    public override void EnterNestedPrompt()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void ExitNestedPrompt()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void NotifyBeginApplication()
+    {
+        return;
+    }
+
+    public override void NotifyEndApplication()
+    {
+        return;
+    }
+
+    public override void SetShouldExit(int exitCode)
+    {
+        return;
+    }
+}
+
+internal class RmPSHostUserInterface : PSHostUserInterface
+{
+    public API RainmeterAPI { get; set; }
+
+    public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)
+    {
+        RainmeterAPI.Log(API.LogType.Notice, value);
+    }
+
+    public override void Write(string value)
+    {
+        RainmeterAPI.Log(API.LogType.Notice, value);
+    }
+
+    public override void WriteDebugLine(string message)
+    {
+        RainmeterAPI.Log(API.LogType.Debug, message);
+    }
+
+    public override void WriteErrorLine(string value)
+    {
+        RainmeterAPI.Log(API.LogType.Error, value);
+    }
+
+    public override void WriteLine(string value)
+    {
+        RainmeterAPI.Log(API.LogType.Notice, value);
+    }
+
+    public override void WriteVerboseLine(string message)
+    {
+        RainmeterAPI.Log(API.LogType.Notice, message);
+    }
+
+    public override void WriteWarningLine(string message)
+    {
+        RainmeterAPI.Log(API.LogType.Warning, message);
+    }
+
+    public override void WriteProgress(long sourceId, ProgressRecord record)
+    {
+        return;
+    }
+
+    public string Output
+    {
+        get { return null; }
+    }
+
+    public override Dictionary<string, PSObject> Prompt(string caption, string message, Collection<FieldDescription> descriptions)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override int PromptForChoice(string caption, string message, Collection<ChoiceDescription> choices, int defaultChoice)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override PSHostRawUserInterface RawUI
+    {
+        get { return null; }
+    }
+
+    public override string ReadLine()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override System.Security.SecureString ReadLineAsSecureString()
+    {
+        throw new NotImplementedException();
+    }
+}
 }
