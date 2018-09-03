@@ -10,16 +10,18 @@ function Update {
         }
         # Set the newest clipboard to last position of collection
         $Global:ClipCollection[4] = $clip
-    }
 
-    for ($i = 4; $i -ge 0; $i--) {
-        if ($null -eq $Global:ClipCollection[$i]) {
-            break;
+        for ($i = 4; $i -ge 0; $i--) {
+            if ($null -eq $Global:ClipCollection[$i]) {
+                break;
+            }
+            $meterIndex = 5 - $i
+            $RmAPI.Execute("!ShowMeter Icon$meterIndex")
+
+            $strippedDownline = $Global:ClipCollection[$i] -replace "`n", "" -replace "`r", ""
+            $RmAPI.Execute("!SetOption Value$meterIndex Text `"`"`"$strippedDownline`"`"`"")
+            $RmAPI.Execute("!SetOption Value$meterIndex TooltipText `"`"`"$($Global:ClipCollection[$i])`"`"`"")
         }
-        $meterIndex = 5 - $i
-        $RmAPI.Execute("!SetOption Icon$meterIndex Text `"[\xF0E3]`"")
-        $RmAPI.Execute("!SetOption Value$meterIndex Text `"`"`"$($Global:ClipCollection[$i])`"`"`"")
-        $RmAPI.Execute("!SetOption Value$meterIndex TooltipText `"`"`"$($Global:ClipCollection[$i])`"`"`"")
     }
 }
 
