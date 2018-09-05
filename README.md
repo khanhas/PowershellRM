@@ -2,10 +2,6 @@
     <img src="https://github.com/khanhas/powershellrm/blob/master/assets/logo.svg">
 </div>
 
-<div align="right">
-    Invokes Powershell script in Rainmeter
-</div>
-
 ## Install
 - Download and install rmskin package in [Release page](https://github.com/khanhas/PowershellRM/releases/)  
     or download dll zip package, extract the dll corresponding to your system platform to `%appdata%\Rainmeter\Plugins`.
