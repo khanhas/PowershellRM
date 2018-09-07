@@ -230,6 +230,16 @@ namespace PowershellRM
 
         internal override void Dispose()
         {
+            CommandInfo updateFuncInfo = runspace.SessionStateProxy.InvokeCommand.GetCommand("Finalize", CommandTypes.Function);
+            if (updateFuncInfo != null)
+            {
+                using (Pipeline pipe = runspace.CreatePipeline())
+                {
+                    pipe.Commands.Add("Finalize");
+                    pipe.Invoke();
+                }
+            }
+            
             runspace.Dispose();
             ParentMeasures.Remove(this);
         }
