@@ -1,36 +1,39 @@
-$Global:ClipCollection = @($null, $null, $null, $null, $null)
+ $ClipCollection = 0..4 | ForEach-Object { $null }
 
 function Update {
     $clip = Get-Clipboard -Format Text -Raw
 
-    if ($clip -ne $Global:ClipCollection[4] -and $null -ne $clip) {
+    if ($clip -ne $ClipCollection[0] -and $null -ne $clip) {
         # Copy newer clipboard to older clipboard position
-        for ($i = 0; $i -lt 4; $i++) {
-            $Global:ClipCollection[$i] = $Global:ClipCollection[$i + 1]
+        for ($i = 4; $i -ge 1; $i--) {
+            $ClipCollection[$i] = $ClipCollection[$i - 1]
         }
-        # Set the newest clipboard to last position of collection
-        $Global:ClipCollection[4] = $clip
 
-        for ($i = 4; $i -ge 0; $i--) {
-            if ($null -eq $Global:ClipCollection[$i]) {
+        # Set the newest clipboard to first position of collection
+        $ClipCollection[0] = $clip
+
+        for ($i = 0; $i -le 4; $i++) {
+            $item = $ClipCollection[$i]
+
+            if ($null -eq $item) {
                 break;
             }
-            $meterIndex = 5 - $i
-            $RmAPI.Execute("!ShowMeter Icon$meterIndex")
 
-            $strippedDownline = $Global:ClipCollection[$i] -replace "`n", "" -replace "`r", ""
-            $RmAPI.Execute("!SetOption Value$meterIndex Text `"`"`"$strippedDownline`"`"`"")
-            $RmAPI.Execute("!SetOption Value$meterIndex TooltipText `"`"`"$($Global:ClipCollection[$i])`"`"`"")
+            $RmAPI.Execute("!ShowMeter Icon$i")
+
+            $strippedDownline = $item -replace "`n", "" -replace "`r", ""
+            $RmAPI.Execute("!SetOption Value$i Text `"`"`"$strippedDownline`"`"`"")
+            $RmAPI.Execute("!SetOption Value$i TooltipText `"`"`"$item`"`"`"")
         }
     }
 }
 
 function SetClip {
     param (
-       [int]$index = 1
+       [int]$index = 0
     )
-    $arrayIndex = 5 - $index
-    if ($Global:ClipCollection[$arrayIndex]) {
-        Set-Clipboard $Global:ClipCollection[$arrayIndex]
+
+    if ($ClipCollection[$index]) {
+        Set-Clipboard $ClipCollection[$index]
     }
 }
