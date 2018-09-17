@@ -694,5 +694,10 @@ internal class RmAPIWrapper
     {
         return _rm.GetSkinWindow();
     }
+
+    public string GetMeasureName()
+    {
+        return _rm.GetMeasureName();
+    }
 }
 }
