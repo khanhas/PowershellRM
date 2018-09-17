@@ -19,11 +19,11 @@ function Update {
                 break;
             }
 
-            $RmAPI.Execute("!ShowMeter Icon$i")
+            $RmAPI.Bang("!ShowMeter Icon$i")
 
             $strippedDownline = $item -replace "`n", "" -replace "`r", ""
-            $RmAPI.Execute("!SetOption Value$i Text `"`"`"$strippedDownline`"`"`"")
-            $RmAPI.Execute("!SetOption Value$i TooltipText `"`"`"$item`"`"`"")
+            $RmAPI.Bang("!SetOption Value$i Text `"`"`"$strippedDownline`"`"`"")
+            $RmAPI.Bang("!SetOption Value$i TooltipText `"`"`"$item`"`"`"")
         }
     }
 }
