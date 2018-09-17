@@ -613,7 +613,14 @@ internal class RmAPIWrapper
         return _rm.ReplaceVariables("#" + var + "#");
     }
 
-    public string ReplaceVariables(string input)
+    public double ReplaceVariables(string input)
+    {
+        string value = _rm.ReplaceVariables(input);
+        double.TryParse(value, out double result);
+        return result;
+    }
+
+    public string ReplaceVariablesStr(string input)
     {
         return _rm.ReplaceVariables(input);
     }
@@ -623,12 +630,12 @@ internal class RmAPIWrapper
         return _rm.ReadDouble(key, defaultValue);
     }
 
-    public int Option(string key, int defaultValue = 0)
+    public int OptionInt(string key, int defaultValue = 0)
     {
         return _rm.ReadInt(key, defaultValue);
     }
 
-    public string Option(string key, string defaultValue = "")
+    public string OptionStr(string key, string defaultValue = "")
     {
         return _rm.ReadString(key, defaultValue);
     }
