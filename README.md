@@ -60,20 +60,25 @@ If your script is too long, it is best to write them in script file and set scri
 
 ### Parent only
 #### `ScriptFile`
-Script files can only be used in parent measure. And only script in script file is invoked, if you both set ScriptFile and `Line`s, script defined in `Line`s will be ignored.
+Script files can only be used in parent measure. And only script in script file is invoked, if you both set ScriptFile and `Line`s, script defined in `Line`s will be ignored.  
+In this script file, you need to define function `Update` with no parameter.  
+`Update` function is called every time skin updating and whatever it returning will be measure value.  
+Optionally, you can define function `Finalize` with no parameter.  
+`Finalize` function is called when reloads/unloads skin or when exits Rainmeter.   
 
 #### `ExecutionPolicy` (Default = `default`)
 Change execution policy to execute or load digitally unsigned script. Use at caution.  
 Valid values:
-- `unrestricted`
-- `remotesigned`
 - `allsigned`
-- `restricted`
 - `bypass`
+- `default`
+- `remotesigned`
+- `restricted`
 - `undefined`
+- `unrestricted`
 
 ### Child only
-#### `ParentName`
+#### `Parent`
 Set parent that this measure will be shared session state with.
 
 ## Functions
@@ -81,36 +86,40 @@ Rainmeter API is exposed to use in Powershell script by accessing variable `$RmA
 
 `$RmAPI` | Param | Returns | Description
 ---|---|---|---
-`.Execute` | `(bangs)` | | Execute Rainmeter bangs.
+`.Bang` | `(bangs)` | | Execute Rainmeter bangs.
 `.GetMeasureName` | `()` | string | Returns current measure name.
-`.GetSkin` | `()` | int | Retrieves interger value of the internal pointer to the current skin.
 `.GetSkinName` | `()` | string | Returns current skin name.
-`.GetSkinWindow` | `()` | int | Returns interger value of the pointer to the handle of the skin window.
-`.Log` | `(logType, message)` | | Prints message to Log Window.
-`.LogF` | `(logType, format, ...args[])` | | Prints formated string to Log Window
-`.ReadDouble` | `(option, defaultValue)` | double | Retrieves measure option value in `double` type. 
-`.ReadInt` | `(option, defaultValue)` | int |Retrieves measure option value in interger. 
-`.ReadPath` | `(option, defaultValue)` | string | Retrieves measure option defined in the skin file and converts a relative path to a absolute path.
-`.ReadString` | `(option, defaultValue)` | string | Retrieves the option defined in the skin file as a string.
-`.ReplaceVariables` | `(input)` | string | Returns a string, replacing any variables (or section variables) within the inputted string.
- 
-Valid `logType`:
-- `1`: Error
-- `2`: Warning
-- `3`: Notice
-- `4`: Debug
+`.GetSkinHandle` | `()` | int | Returns interger value of the pointer to the handle of the skin window.
+`.Log` | `(message)` | | Prints notice message to Log Window.
+`.Log` | `(format, ...arg[])` | | Prints formatted notice message to Log Window.
+`.LogDebug` | `(message)` | | Prints debug message to Log Window. 
+`.LogDebug` | `(format, ...arg[])` | | Prints formatted debug message to Log Window.
+`.LogError` | `(message)` | | Prints error message to Log Window.
+`.LogError` | `(format, ...arg[])` | | Prints formatted error message to Log Window.
+`.LogWarning` | `(message)` | | Prints warning message to Log Window.
+`.LogWarning` | `(format, ...arg[])` | | Prints formatted warning message to Log Window.
+`.Measure` | `(measureName)` | double | Gets number value of a measure.
+`.MeasureStr` | `(measureName)` | string | Gets string value of a measure.
+`.Option` | `(option, defaultValue = 0.0)` | double | Retrieves measure option value in `double` type. 
+`.OptionInt` | `(option, defaultValue = 0)` | int | Retrieves measure option value in interger. 
+`.OptionStr` | `(option, defaultValue = "")` | string | Retrieves measure option value as a string. 
+`.OptionPath` | `(option, defaultValue = "")` | string | Retrieves measure option defined in the skin file and converts a relative path to a absolute path.
+`.ReplaceVariables` | `(input)` | double | Replaces any variables (or section variables) within the inputted string, tries to parse and returns result as double. Returns `0.0` if it cannot parse.
+`.ReplaceVariablesStr` | `(input)` | string | Returns a string, replacing any variables (or section variables) within the inputted string.
+`.Variable` | `(variableName)` | double | Gets a skin variable value, tries to parse and returns result as double. Returns `0.0` if it cannot parse.
+`.VariableStr` | `(variableName)` | string | Gets a skin variable value as a string. 
 
 ## Log
 There are 2 ways that you can use to print log into Rainmeter log windows:
 ### 1. Use Rainmeter API:
 ```powershell
 # Print a warning:
-$RmAPI.Log(2, "WARNING! Be careful dude.")
+$RmAPI.LogWarning("WARNING! Be careful dude.")
 
 #Print a formatted error:
 $errorSource = "an option"
 $check = "Color variable"
-$RmAPI.LogF(1, "ERROR! You messed {0} up! Check {1} again!", $errorSource, $check)
+$RmAPI.LogError("ERROR! You messed {0} up! Check {1} again!", $errorSource, $check)
 ```
 
 ### 2. Use `Write-` commands  
