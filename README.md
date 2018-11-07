@@ -98,16 +98,20 @@ Rainmeter API is exposed to use in Powershell script by accessing variable `$RmA
 `.LogError` | `(format, ...arg[])` | | Prints formatted error message to Log Window.
 `.LogWarning` | `(message)` | | Prints warning message to Log Window.
 `.LogWarning` | `(format, ...arg[])` | | Prints formatted warning message to Log Window.
-`.Measure` | `(measureName)` | double | Gets number value of a measure.
-`.MeasureStr` | `(measureName)` | string | Gets string value of a measure.
+`.Measure` | `(measureName)` | double \| null | Gets number value of a measure. Returns `$null` if measure doesn't exist.
+`.Measure` | `(measureName, defaultValue)` | double | Gets number value of a measure.  Returns `defaultValue` if measure doesn't exist.
+`.MeasureStr` | `(measureName)` | string \| null | Gets string value of a measure. Returns `$null` if measure doesn't exist.
+`.MeasureStr` | `(measureName, defaultValue)` | string \| null | Gets string value of a measure.  Returns `defaultValue` if measure doesn't exist.
 `.Option` | `(option, defaultValue = 0.0)` | double | Retrieves measure option value in `double` type. 
 `.OptionInt` | `(option, defaultValue = 0)` | int | Retrieves measure option value in interger. 
 `.OptionStr` | `(option, defaultValue = "")` | string | Retrieves measure option value as a string. 
 `.OptionPath` | `(option, defaultValue = "")` | string | Retrieves measure option defined in the skin file and converts a relative path to a absolute path.
 `.ReplaceVariables` | `(input)` | double | Replaces any variables (or section variables) within the inputted string, tries to parse and returns result as double. Returns `0.0` if it cannot parse.
 `.ReplaceVariablesStr` | `(input)` | string | Returns a string, replacing any variables (or section variables) within the inputted string.
-`.Variable` | `(variableName)` | double | Gets a skin variable value, tries to parse and returns result as double. Returns `0.0` if it cannot parse.
-`.VariableStr` | `(variableName)` | string | Gets a skin variable value as a string. 
+`.Variable` | `(variableName)` | double \| null | Gets a skin variable value, tries to parse and returns result as double. Returns `0.0` if it cannot parse. Returns `$null` if variable doesn't exist.
+`.Variable` | `(variableName, defaultValue)` | double | Gets a skin variable value, tries to parse and returns result as double. Returns `0.0` if it cannot parse. Returns `defaultValue` if variable doesn't exist.
+`.VariableStr` | `(variableName)` | string \| null | Gets a skin variable value as a string. Returns `$null` if variable doesn't exist.
+`.VariableStr` | `(variableName, defaultValue)` | string | Gets a skin variable value as a string. Returns `defaultValue` if variable doesn't exist.
 
 ## Log
 There are 2 ways that you can use to print log into Rainmeter log windows:
