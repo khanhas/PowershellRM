@@ -599,28 +599,98 @@ internal class RmAPIWrapper
         _rm.Execute(bangs);
     }
 
-    public double Measure(string measure)
+    public double? Measure(string measure)
     {
-        string value = _rm.ReplaceVariables("[" + measure + ":]");
+        string measureName = "[" + measure + ":]";
+        string value = _rm.ReplaceVariables(measureName);
+        if (measureName == value)
+        {
+            return null;
+        }
+
         double.TryParse(value, out double result);
         return result;
+    }
+
+    public double Measure(string measure, double defaultValue)
+    {
+        double? value = Measure(measure);
+        if (value.HasValue)
+        {
+            return value.Value;
+        }
+
+        return defaultValue;
     }
 
     public string MeasureStr(string measure)
     {
-        return _rm.ReplaceVariables("[" + measure + "]");
+        string measureName = "[" + measure + "]";
+        string value = _rm.ReplaceVariables(measureName);
+        if (measureName == value)
+        {
+            return null;
+        }
+
+        return value;
     }
 
-    public double Variable(string var)
+    public string MeasureStr(string measure, string defaultValue)
     {
-        string value = _rm.ReplaceVariables("#" + var + "#");
-        double.TryParse(value, out double result);
-        return result;
+        string value = MeasureStr(measure);
+        if (value == null)
+        {
+            return defaultValue;
+        }
+
+        return value;
     }
 
     public string VariableStr(string var)
     {
-        return _rm.ReplaceVariables("#" + var + "#");
+        string varName = "#" + var + "#";
+        string value = _rm.ReplaceVariables(varName);
+
+        if (varName == value)
+        {
+            return null;
+        }
+
+        return value;
+    }
+
+    public string VariableStr(string var, string defaultValue)
+    {
+        string value = VariableStr(var);
+        if (value == null)
+        {
+            return defaultValue;
+        }
+
+        return value;
+    }
+
+    public double? Variable(string var)
+    {
+        string value = VariableStr(var);
+        if (value == null)
+        {
+            return null;
+        }
+
+        double.TryParse(value, out double result);
+        return result;
+    }
+
+    public double Variable(string var, double defaultValue)
+    {
+        double? value = Variable(var);
+        if (value.HasValue)
+        {
+            return value.Value;
+        }
+
+        return defaultValue;
     }
 
     public double ReplaceVariables(string input)
