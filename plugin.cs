@@ -38,28 +38,31 @@ namespace PowershellRM
 
         internal void Reload()
         {
-            if (scriptType == ScriptTypes.NOTVALID || scriptType == ScriptTypes.LINE)
+            if (scriptType != ScriptTypes.NOTVALID
+             && scriptType != ScriptTypes.LINE)
             {
-                script = "";
-                int lineNum = 1;
-                string command = rmAPI.ReadString(baseLine, "", false);
-
-                if (string.IsNullOrEmpty(command))
-                {
-                    scriptType = ScriptTypes.NOTVALID;
-                    rmAPI.Log(API.LogType.Error, "Command not found.");
-                    return;
-                }
-
-                while (!string.IsNullOrEmpty(command))
-                {
-                    script += command + "\n";
-                    ++lineNum;
-                    command = rmAPI.ReadString(baseLine + lineNum, "", false);
-                }
-
-                scriptType = ScriptTypes.LINE;
+                return;
             }
+
+            script = "";
+            int lineNum = 1;
+            string command = rmAPI.ReadString(baseLine, "", false);
+
+            if (string.IsNullOrEmpty(command))
+            {
+                scriptType = ScriptTypes.NOTVALID;
+                rmAPI.Log(API.LogType.Error, "Command not found.");
+                return;
+            }
+
+            while (!string.IsNullOrEmpty(command))
+            {
+                script += command + "\n";
+                ++lineNum;
+                command = rmAPI.ReadString(baseLine + lineNum, "", false);
+            }
+
+            scriptType = ScriptTypes.LINE;
         }
 
         internal double Update()
@@ -76,20 +79,22 @@ namespace PowershellRM
 
         internal void ExecuteBang(string args)
         {
-            if (args.Length > 0)
+            if (string.IsNullOrEmpty(args))
             {
-                try
+                return;
+            }
+
+            try
+            {
+                using (Pipeline pipe = runspace.CreatePipeline())
                 {
-                    using (Pipeline pipe = runspace.CreatePipeline())
-                    {
-                        pipe.Commands.AddScript(args);
-                        pipe.Invoke();
-                    }
+                    pipe.Commands.AddScript(args);
+                    pipe.Invoke();
                 }
-                catch (Exception e)
-                {
-                    rmAPI.Log(API.LogType.Error, e.ToString());
-                }
+            }
+            catch (Exception e)
+            {
+                rmAPI.Log(API.LogType.Error, e.ToString());
             }
         }
 
@@ -193,42 +198,44 @@ namespace PowershellRM
             SetRmAPI();
             runspace.SessionStateProxy.Path.SetLocation(rmAPI.ReplaceVariables("#CURRENTPATH#"));
 
+            ParentMeasures.Add(this);
+
             string filePath = rmAPI.ReadPath("ScriptFile", "");
-            if (!string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrEmpty(filePath))
             {
-                if (!System.IO.File.Exists(filePath))
-                {
-                    rmAPI.Log(API.LogType.Error, "Script file does not exist.");
-                }
-                else
-                {
-                    scriptType = ScriptTypes.FILE;
-                    script = System.IO.File.ReadAllText(filePath);
-
-                    try
-                    {
-                        using (Pipeline pipe = runspace.CreatePipeline())
-                        {
-                            pipe.Commands.AddScript(script);
-                            pipe.Invoke();
-                        }
-
-                        CommandInfo updateFuncInfo = runspace.SessionStateProxy.InvokeCommand.GetCommand("Update", CommandTypes.Function);
-                        if (updateFuncInfo == null)
-                        {
-                            rmAPI.Log(API.LogType.Debug, "Could not find Update function in script file.");
-                            scriptType = ScriptTypes.FILENOUPDATE;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        rmAPI.Log(API.LogType.Error, e.ToString());
-                        scriptType = ScriptTypes.NOTVALID;
-                    }
-                }
+                return;
             }
 
-            ParentMeasures.Add(this);
+            if (!System.IO.File.Exists(filePath))
+            {
+                rmAPI.Log(API.LogType.Error, "Script file does not exist.");
+                return;
+            }
+
+            scriptType = ScriptTypes.FILE;
+            script = System.IO.File.ReadAllText(filePath);
+
+            try
+            {
+                using (Pipeline pipe = runspace.CreatePipeline())
+                {
+                    pipe.Commands.AddScript(script);
+                    pipe.Invoke();
+                }
+
+                CommandInfo updateFuncInfo = runspace.SessionStateProxy.InvokeCommand.GetCommand("Update", CommandTypes.Function);
+                if (updateFuncInfo == null)
+                {
+                    rmAPI.Log(API.LogType.Debug, "Could not find Update function in script file.");
+                    scriptType = ScriptTypes.FILENOUPDATE;
+                }
+            }
+            catch (Exception e)
+            {
+                rmAPI.Log(API.LogType.Error, e.ToString());
+                scriptType = ScriptTypes.NOTVALID;
+            }
+
         }
 
         internal override void Dispose()
@@ -378,42 +385,45 @@ namespace PowershellRM
         [DllExport]
         public static IntPtr Invoke(IntPtr data, int argc, [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] argv)
         {
-            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            if (argc > 0)
+            if (argc <= 0)
             {
-                using (Pipeline pipe = measure.runspace.CreatePipeline())
-                {
-                    for (int i = 0; i < argc; i++)
-                    {
-                        string command = argv[i];
-                        // Trim double quotes
-                        if (command.StartsWith("\"") && command.EndsWith("\""))
-                        {
-                            command = command.Remove(command.Length - 1, 1).Remove(0, 1);
-                        }
-                        pipe.Commands.AddScript(command);
-                    }
+                return IntPtr.Zero;
+            }
 
-                    try
+            Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
+
+            using (Pipeline pipe = measure.runspace.CreatePipeline())
+            {
+                for (int i = 0; i < argc; i++)
+                {
+                    string command = argv[i];
+                    // Trim double quotes
+                    if (command.StartsWith("\"") && command.EndsWith("\""))
                     {
-                        var outputCollection = pipe.Invoke();
-                        PSObject lastObject = null;
-                        foreach (PSObject output in outputCollection)
+                        command = command.Remove(command.Length - 1, 1).Remove(0, 1);
+                    }
+                    pipe.Commands.AddScript(command);
+                }
+
+                try
+                {
+                    var outputCollection = pipe.Invoke();
+                    PSObject lastObject = null;
+                    foreach (PSObject output in outputCollection)
+                    {
+                        if (output != null)
                         {
-                            if (output != null)
-                            {
-                                lastObject = output;
-                            }
-                        }
-                        if (lastObject != null)
-                        {
-                            return Marshal.StringToHGlobalUni(lastObject.BaseObject.ToString());
+                            lastObject = output;
                         }
                     }
-                    catch (Exception e)
+                    if (lastObject != null)
                     {
-                        measure.rmAPI.Log(API.LogType.Error, e.Message);
+                        return Marshal.StringToHGlobalUni(lastObject.BaseObject.ToString());
                     }
+                }
+                catch (Exception e)
+                {
+                    measure.rmAPI.Log(API.LogType.Error, e.Message);
                 }
             }
 
