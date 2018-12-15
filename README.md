@@ -191,7 +191,7 @@ Line = $Noun = "The Obesity"
 
 [Meter]
 Meter = String
-Text = [MeasureName:Invoke("'Yomama', '#Verb#', $Noun -join ' - '")]
+Text = [PSMR:Invoke("'Yomama', '#Verb#', $Noun -join ' - '")]
 ```
 
 Because of this messy interface, you really should prepare a function in your PowershellRM script that only need to pass few parameters that are simple objects like string, interger or float. Then uses `:Invoke` to call that function.
