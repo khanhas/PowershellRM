@@ -191,10 +191,25 @@ Line = $Noun = "The Obesity"
 
 [Meter]
 Meter = String
-Text = [PSMR:Invoke("'Yomama', '#Verb#', $Noun -join ' - '")]
+Text = [PSRM:Invoke("'Yomama', '#Verb#', $Noun -join ' - '")]
 ```
 
 Because of this messy interface, you really should prepare a function in your PowershellRM script that only need to pass few parameters that are simple objects like string, interger or float. Then uses `:Invoke` to call that function.
+
+## Bang
+You can invoke functions, cmdlets or a script block with `!CommandMeasure` bang
+
+```ini
+[PSRM]
+Measure = Plugin
+Plugin = PowershellRM
+Line = function FirstFile { $f = Get-ChildItem .\; $RmAPI.Log($f[0].FullName) }
+
+[Meter]
+Meter = Shape
+Shape = Rectangle 0,0,200,200
+LeftMouseUpAction = !CommandMeasure PSRM "FirstFile"
+```
 
 ## Development
 Requirements:
