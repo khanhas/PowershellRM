@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: AssemblyCopyright("© 2018 - khanhas")]
-[assembly: AssemblyVersion("0.1.0")]
+[assembly: AssemblyVersion("0.5.0")]
 
 // Do not change the entries below!
 #if X64
@@ -11,3 +11,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyInformationalVersion("3.0.2.2161 (32-bit)")]
 #endif
 [assembly: AssemblyProduct("Rainmeter")]
+[assembly: AssemblyTitle("PowershelllRM")]
+[assembly: AssemblyDescription("Execute Powershell script in Rainmeter")]
+[assembly: AssemblyCompany("khanhas")]
+

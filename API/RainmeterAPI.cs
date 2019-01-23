@@ -372,7 +372,7 @@ namespace Rainmeter
         ///     Measure measure = (Measure)data;
         ///     string notice = "notice";
         ///     measure.api.LogF(measure.rm, API.LogType.Notice, "I am a '{0}' log message with a source", notice); // 'measure.rm' stored previously in the Initialize function
-        ///     
+        ///
         ///     return 0.0;
         /// }
         /// </code>
@@ -396,7 +396,7 @@ namespace Rainmeter
         /// {
         ///     Measure measure = (Measure)data;
         ///     measure.api.Log(api, API.LogType.Notice, "I am a 'notice' log message with a source"); // 'measure.api' stored previously in the Initialize function
-        ///     
+        ///
         ///     return 0.0;
         /// }
         /// </code>
@@ -422,7 +422,7 @@ namespace Rainmeter
         ///     Measure measure = (Measure)data;
         ///     string notice = "notice";
         ///     measure.api.LogF(API.LogType.Notice, "I am a '{0}' log message with a source", notice); // 'measure.api' stored previously in the Initialize function
-        ///     
+        ///
         ///     return 0.0;
         /// }
         /// </code>
