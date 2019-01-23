@@ -1,5 +1,6 @@
 ﻿using Rainmeter;
 using System;
+using System.Management.Automation.Runspaces;
 
 namespace PowershellRM
 {
@@ -46,13 +47,25 @@ namespace PowershellRM
             }
 
             script = GetCommandFromLine();
+            using (Pipeline pipe = runspace.CreatePipeline())
+            {
+                pipe.Commands.Add(script);
+                try
+                {
+                    pipe.Invoke();
+                }
+                catch (Exception e)
+                {
+                    rmAPI.Log(API.LogType.Error, e.ToString());
+                }
+            }
         }
 
         internal override double Update()
         {
             if (parent == null) return 0;
 
-            if (parent.state != State.Ready) return 0;
+            if (parent.state == State.NotReady) return 0;
 
             Invoke();
             return outputNumber;

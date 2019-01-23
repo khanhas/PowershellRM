@@ -6,12 +6,12 @@ using System.Text;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Management.Automation;
 using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
+using System.Threading.Tasks;
 
 namespace PowershellRM
 {
@@ -100,7 +100,20 @@ namespace PowershellRM
             }
 
             script = GetCommandFromLine();
-            state = State.Ready;
+            using (Pipeline pipe = runspace.CreatePipeline())
+            {
+                pipe.Commands.Add(script);
+                try
+                {
+                    pipe.Invoke();
+                    state = State.Ready;
+                }
+                catch (Exception e)
+                {
+                    rmAPI.Log(API.LogType.Error, e.ToString());
+                    state = State.NotReady;
+                }
+            }
         }
 
         internal override double Update()
@@ -111,12 +124,6 @@ namespace PowershellRM
             }
 
             Invoke();
-
-            if (state == State.Ready)
-            {
-                state = State.Initiated;
-            }
-
             return outputNumber;
         }
 
@@ -161,7 +168,7 @@ namespace PowershellRM
 
         internal override string SectionInvoke(string[] args)
         {
-            if (state != State.Initiated)
+            if (state != State.Ready)
             {
                 return "";
             }
@@ -171,7 +178,7 @@ namespace PowershellRM
 
         internal override string SectionGetVariable(string variableName, string defaulValue)
         {
-            if (state != State.Initiated)
+            if (state != State.Ready)
             {
                 return defaulValue;
             }
@@ -181,7 +188,7 @@ namespace PowershellRM
 
         internal override string SectionExpand(string input)
         {
-            if (state != State.Initiated)
+            if (state != State.Ready)
             {
                 return input;
             }
