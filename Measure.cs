@@ -19,8 +19,7 @@ namespace PowershellRM
     internal enum State
     {
         NotReady,
-        Ready,
-        Initiated
+        Ready
     }
 
     internal class Measure
@@ -78,6 +77,7 @@ namespace PowershellRM
 
         internal void PrepareEnvironment()
         {
+            SetRmAPI();
             runspace.SessionStateProxy
                 .Path.SetLocation(rmAPI.ReplaceVariables("#CURRENTPATH#"));
         }
