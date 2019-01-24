@@ -14,12 +14,11 @@ namespace PowershellRM
             proxy = new APIProxy(api);
 
             string parentName = api.ReadString("Parent", "").ToLowerInvariant();
-            // Supports parent/children across skins.
-            string parentSkin = api.ReadString("ParentSkin", api.GetSkinName()).ToLowerInvariant();
-            string skin = api.GetSkinName().ToLowerInvariant();
+            IntPtr skin = api.GetSkin();
 
-            // Find parent using measure name AND the skin name to be sure that it's the right one.
             parent = null;
+
+            // Find parent using measure name AND the skin pointer to be sure that it's the right one.
             foreach (ParentMeasure parentMeasure in ParentMeasure.ParentMeasures)
             {
                 if (parentMeasure.skin.Equals(skin) &&
@@ -47,6 +46,9 @@ namespace PowershellRM
             }
 
             script = GetCommandFromLine();
+
+            if (parent.state == State.NotReady) return;
+
             using (Pipeline pipe = runspace.CreatePipeline())
             {
                 pipe.Commands.Add(script);
@@ -82,14 +84,14 @@ namespace PowershellRM
             parent.rmPSHost.Ui.RainmeterAPI = rmAPI;
         }
 
-        internal override string SectionInvoke(string[] args)
+        internal override string SectionInvoke(string command)
         {
             if (runspace == null)
             {
                 return null;
             }
 
-            return base.SectionInvoke(args);
+            return base.SectionInvoke(command);
         }
 
         internal override string SectionGetVariable(string variableName, string defaulValue)

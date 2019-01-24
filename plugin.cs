@@ -110,7 +110,9 @@ namespace PowershellRM
 
             Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
 
-            string result = measure.SectionInvoke(argv);
+            string command = TrimQuotes(argv[0]);
+
+            string result = measure.SectionInvoke(command);
             if (result == null)
             {
                 // Do not replace the variable
@@ -154,9 +156,23 @@ namespace PowershellRM
             }
 
             Measure measure = (Measure)GCHandle.FromIntPtr(data).Target;
-            string result = measure.SectionExpand(argv[0]);
+
+            string command = TrimQuotes(argv[0]);
+
+            string result = measure.SectionExpand(command);
 
             return Marshal.StringToHGlobalUni(result);
+        }
+
+        private static string TrimQuotes(string input)
+        {
+            if (input.StartsWith("\"") && input.EndsWith("\"") ||
+                input.StartsWith("'") && input.EndsWith("'"))
+            {
+                return input.Substring(1, input.Length - 3);
+            }
+
+            return input;
         }
     }
 }

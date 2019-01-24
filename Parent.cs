@@ -18,7 +18,7 @@ namespace PowershellRM
     internal class ParentMeasure : Measure
     {
         internal static List<ParentMeasure> ParentMeasures = new List<ParentMeasure>();
-        internal string skin;
+        internal IntPtr skin;
         internal string measureName;
         internal PSHostProxy rmPSHost;
         internal State state = State.NotReady;
@@ -29,7 +29,7 @@ namespace PowershellRM
             proxy = new APIProxy(api);
 
             measureName = api.GetMeasureName().ToLowerInvariant();
-            skin = api.GetSkinName().ToLowerInvariant();
+            skin = api.GetSkin();
 
             var initState = CreateSessionState();
 
@@ -55,10 +55,10 @@ namespace PowershellRM
             }
 
             type = ScriptType.FileNoUpdate;
+            string rawScript = File.ReadAllText(filePath);
 
             Task.Run(() =>
             {
-                string rawScript = File.ReadAllText(filePath);
                 using (Pipeline pipe = runspace.CreatePipeline())
                 {
                     pipe.Commands.AddScript(rawScript);
@@ -166,14 +166,14 @@ namespace PowershellRM
             rmPSHost.Ui.RainmeterAPI = rmAPI;
         }
 
-        internal override string SectionInvoke(string[] args)
+        internal override string SectionInvoke(string command)
         {
             if (state != State.Ready)
             {
                 return "";
             }
 
-            return base.SectionInvoke(args);
+            return base.SectionInvoke(command);
         }
 
         internal override string SectionGetVariable(string variableName, string defaulValue)

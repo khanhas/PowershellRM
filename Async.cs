@@ -83,14 +83,14 @@ namespace PowershellRM
             return ps.InvocationStateInfo.State.ToString();
         }
 
-        internal override string SectionInvoke(string[] args)
+        internal override string SectionInvoke(string command)
         {
             if (ps.InvocationStateInfo.State == PSInvocationState.Running)
             {
                 return null;
             }
 
-            return base.SectionInvoke(args);
+            return base.SectionInvoke(command);
         }
 
         internal override string SectionGetVariable(string variableName, string defaulValue)

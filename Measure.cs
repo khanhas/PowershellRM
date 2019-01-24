@@ -183,7 +183,7 @@ namespace PowershellRM
             return new Command(rawScript, true);
         }
 
-        internal virtual string SectionInvoke(string[] args)
+        internal virtual string SectionInvoke(string command)
         {
             if (runspace.RunspaceAvailability != RunspaceAvailability.Available)
             {
@@ -192,17 +192,7 @@ namespace PowershellRM
 
             using (Pipeline pipe = runspace.CreatePipeline())
             {
-                foreach (string arg in args)
-                {
-                    string command = arg;
-                    // Trim double quotes
-                    if (command.StartsWith("\"") && command.EndsWith("\""))
-                    {
-                        command = command.Remove(command.Length - 1, 1).Remove(0, 1);
-                    }
-                    pipe.Commands.AddScript(command);
-                }
-
+                pipe.Commands.AddScript(command);
                 try
                 {
                     var outputCollection = pipe.Invoke();
