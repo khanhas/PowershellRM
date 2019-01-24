@@ -1,11 +1,6 @@
----
-description: >-
-  Execute a script file or just couple lines of Powershell right in Rainmeter,
-  natively. Results of invocation will be measure value and be updated along
-  with skin update.
----
-
 # Home
+
+Execute a script file or just couple lines of Powershell right in Rainmeter, natively. Results of invocation will be measure value and be updated along with skin update.
 
 ## Install
 
@@ -34,7 +29,11 @@ $PSVersionTable.PSVersion.Major
 
 If value returned is `2`, download and upgrade newest PowerShell here: [https://www.microsoft.com/en-us/download/details.aspx?id=54616](https://www.microsoft.com/en-us/download/details.aspx?id=54616)
 
-### Basic usage
+## Documentation
+
+[https://khanhas.gitbook.io/powershellrm/](https://khanhas.gitbook.io/powershellrm/)
+
+## Basic usage
 
 There are 2 ways to input your script:
 
