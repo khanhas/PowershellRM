@@ -7,6 +7,7 @@
 * [Rainmeter API](rainmeter-api.md)
 * [Logging](logging.md)
 * [Inline Functions](inline-functions.md)
+* [Bang](bang.md)
 
 ## Tips and trick
 
