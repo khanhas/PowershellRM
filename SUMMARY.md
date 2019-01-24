@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Home](README.md)
+* [PowershellRM](README.md)
 * [Parent Measure](parent-measure.md)
 * [Child Measure](child-measure.md)
 * [Async Measure](async-measure.md)

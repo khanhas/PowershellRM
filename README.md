@@ -1,4 +1,4 @@
-# Home
+# PowershellRM
 
 Execute a script file or just couple lines of Powershell right in Rainmeter, natively. Results of invocation will be measure value and be updated along with skin update.
 
